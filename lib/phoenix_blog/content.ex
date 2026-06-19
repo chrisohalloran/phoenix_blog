@@ -47,11 +47,14 @@ defmodule PhoenixBlog.Content do
       This is what listings, routes, and the sitemap use.
       """
       def published do
-        today = Date.utc_today()
+        # Allow up to one day ahead of UTC: a post dated "today" in any timezone
+        # can be a day ahead of UTC (local offset up to +14), so it must still show.
+        # Genuine scheduled posts (2+ days out) stay hidden until their date.
+        cutoff = Date.add(Date.utc_today(), 1)
 
         all_posts()
         |> Enum.reject(& &1.draft?)
-        |> Enum.reject(&(Date.compare(&1.date, today) == :gt))
+        |> Enum.reject(&(Date.compare(&1.date, cutoff) == :gt))
       end
 
       @doc "Fetch a published post by slug. Raises `PhoenixBlog.NotFound` if absent."
