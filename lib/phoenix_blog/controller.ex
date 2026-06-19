@@ -35,8 +35,7 @@ defmodule PhoenixBlog.Controller do
     |> assign(:posts, content.published())
     |> assign(:tags, content.all_tags())
     |> assign(:base_path, base_path)
-    |> assign(:page_title, title)
-    |> assign(:seo_meta, seo)
+    |> assign_seo(seo, title)
     |> render(:index)
   end
 
@@ -57,9 +56,21 @@ defmodule PhoenixBlog.Controller do
     |> put_view(html: PhoenixBlog.HTML)
     |> assign(:post, post)
     |> assign(:base_path, base_path)
-    |> assign(:page_title, post.title)
-    |> assign(:seo_meta, seo)
+    |> assign_seo(seo, post.title)
     |> render(:show)
+  end
+
+  # Assign SEO under both conventions so the blog works on any host root:
+  # the structured :seo_meta map (template-family roots) AND the common
+  # individual assigns (:page_title, :canonical_url, :meta_description,
+  # :og_image) that other roots read. Harmless to a root that ignores either.
+  defp assign_seo(conn, seo, page_title) do
+    conn
+    |> assign(:seo_meta, seo)
+    |> assign(:page_title, page_title)
+    |> assign(:canonical_url, seo[:canonical])
+    |> assign(:meta_description, seo[:description])
+    |> assign(:og_image, seo[:og_image])
   end
 
   # The host :app layout is slot-based (incompatible with put_layout), so we set

@@ -32,6 +32,17 @@ defmodule PhoenixBlog.ControllerTest do
     assert html =~ "<strong>first</strong>"
   end
 
+  test "assigns both :seo_meta and conventional individual SEO assigns", %{conn: conn} do
+    conn = get(conn, "/blog/hello-world")
+
+    # structured map (template-family roots)
+    assert conn.assigns.seo_meta.og_type == "article"
+    # individual assigns (other roots, e.g. reveille)
+    assert conn.assigns.page_title == "Hello World"
+    assert conn.assigns.canonical_url == "https://test.example/blog/hello-world"
+    assert is_binary(conn.assigns.meta_description)
+  end
+
   test "GET /blog/:slug with an unknown slug is a 404", %{conn: conn} do
     assert_error_sent(404, fn -> get(conn, "/blog/nope") end)
   end
