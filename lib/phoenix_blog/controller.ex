@@ -91,9 +91,12 @@ defmodule PhoenixBlog.Controller do
         web -> {Module.concat(web, Layouts), :root}
       end
 
+    # Some sites keep chrome (nav/footer) in their root layout (noosa); others put
+    # it in an app/public layout (ripasso). `:layout` opts into wrapping blog
+    # content in that layout; default false renders into root only.
     conn
     |> put_root_layout(html: root)
-    |> put_layout(html: false)
+    |> put_layout(html: config(conn, :layout, false))
   end
 
   defp config(conn, key, default \\ nil) do
