@@ -60,18 +60,27 @@ defmodule PhoenixBlog.Controller do
     |> render(:show)
   end
 
-  # Assign SEO under both conventions so the blog works on any host root:
-  # the structured :seo_meta map (template-family roots) AND the common
-  # individual assigns (:page_title, :canonical_url, :meta_description,
-  # :og_image) that other roots read. Harmless to a root that ignores either.
+  # Assign SEO under every convention the site family uses, so the blog renders
+  # full SEO on any host root with no per-site edits: the structured :seo_meta
+  # map (noosa/pseo) AND the union of individual assigns other roots read
+  # (:page_title, :canonical_url, :meta_description, :og_*, :json_ld). Each is
+  # harmless to a root that ignores it.
   defp assign_seo(conn, seo, page_title) do
     conn
     |> assign(:seo_meta, seo)
     |> assign(:page_title, page_title)
     |> assign(:canonical_url, seo[:canonical])
     |> assign(:meta_description, seo[:description])
+    |> assign(:og_title, seo[:og_title])
+    |> assign(:og_description, seo[:og_description])
+    |> assign(:og_type, seo[:og_type])
     |> assign(:og_image, seo[:og_image])
+    |> assign(:json_ld, encode_json_ld(seo[:schema]))
   end
+
+  # Roots that read an individual :json_ld assign expect a raw JSON string.
+  defp encode_json_ld([schema | _]), do: Jason.encode!(schema, escape: :html_safe)
+  defp encode_json_ld(_), do: nil
 
   # The host :app layout is slot-based (incompatible with put_layout), so we set
   # only the root layout and let PhoenixBlog.HTML own its content container.

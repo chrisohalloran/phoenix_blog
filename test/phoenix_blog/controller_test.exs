@@ -37,10 +37,13 @@ defmodule PhoenixBlog.ControllerTest do
 
     # structured map (template-family roots)
     assert conn.assigns.seo_meta.og_type == "article"
-    # individual assigns (other roots, e.g. reveille)
+    # individual assigns (other roots, e.g. reveille / ripasso)
     assert conn.assigns.page_title == "Hello World"
     assert conn.assigns.canonical_url == "https://test.example/blog/hello-world"
     assert is_binary(conn.assigns.meta_description)
+    assert conn.assigns.og_type == "article"
+    # :json_ld is a raw JSON string for roots that render it directly
+    assert conn.assigns.json_ld =~ ~s|"@type":"Article"|
   end
 
   test "GET /blog/:slug with an unknown slug is a 404", %{conn: conn} do
