@@ -23,7 +23,7 @@ defmodule PhoenixBlog.Controller do
 
     seo =
       SEO.index_meta(
-        canonical_base: config(conn, :canonical_base, ""),
+        canonical_base: canonical_base(conn),
         base_path: base_path,
         title: title,
         description: config(conn, :description, "")
@@ -47,7 +47,7 @@ defmodule PhoenixBlog.Controller do
 
     seo =
       SEO.post_meta(post,
-        canonical_base: config(conn, :canonical_base, ""),
+        canonical_base: canonical_base(conn),
         base_path: base_path
       )
 
@@ -111,5 +111,15 @@ defmodule PhoenixBlog.Controller do
   defp fetch_config!(conn, key) do
     config(conn, key) ||
       raise "phoenix_blog: missing required config #{inspect(key)}; set it in blog_routes opts or under config :phoenix_blog"
+  end
+
+  # Absolute origin for canonical/OG/sitemap URLs. Defaults to the host
+  # endpoint's configured URL (PHX_HOST in prod), so forks of a starter template
+  # get correct canonicals with no per-site config; override with :canonical_base.
+  defp canonical_base(conn) do
+    case config(conn, :canonical_base) do
+      base when is_binary(base) and base != "" -> base
+      _ -> Phoenix.Controller.endpoint_module(conn).url()
+    end
   end
 end

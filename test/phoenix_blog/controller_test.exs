@@ -46,6 +46,11 @@ defmodule PhoenixBlog.ControllerTest do
     assert conn.assigns.json_ld =~ ~s|"@type":"Article"|
   end
 
+  test "canonical derives from the endpoint URL when :canonical_base is unset", %{conn: conn} do
+    conn = get(conn, "/derived/hello-world")
+    assert conn.assigns.canonical_url == "http://localhost/derived/hello-world"
+  end
+
   test "GET /blog/:slug with an unknown slug is a 404", %{conn: conn} do
     assert_error_sent(404, fn -> get(conn, "/blog/nope") end)
   end

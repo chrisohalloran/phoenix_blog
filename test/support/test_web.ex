@@ -70,6 +70,12 @@ defmodule PhoenixBlog.Test.Router do
       title: "Test Blog"
     )
 
+    # A second mount WITHOUT :canonical_base, to prove canonical derives from the endpoint.
+    blog_routes("/derived",
+      content: PhoenixBlog.Test.FixtureBlog,
+      web_module: PhoenixBlog.Test.Web
+    )
+
     # Deliberately AFTER blog_routes, to prove the catch-all does not swallow /blog.
     get("/*path", PhoenixBlog.Test.CatchAllController, :show)
   end
