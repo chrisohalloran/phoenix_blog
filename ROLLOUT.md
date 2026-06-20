@@ -8,7 +8,7 @@ Status of `phoenix_blog` across the Phoenix site family.
 | reveille | `cal-to-call` | pending |
 | ripasso | `ripasso` | pending |
 | leva_web | `leva` (umbrella) | pending — **verify `Layouts.root`/`:app` first** (umbrella, not a template fork) |
-| _template_ | `programatic_seo_site_template` | optional — add so new forks inherit the blog |
+| _template_ | `programatic_seo_site_template` | **done** — blog ships in the starter; every new fork inherits `/blog` automatically (just add `priv/posts/*.md`) |
 
 Non-Phoenix family sites (sondelle, qbcc-calculator, freehold) **cannot** use this
 library; they need a separate Next.js/MDX + static-markdown effort sharing the
