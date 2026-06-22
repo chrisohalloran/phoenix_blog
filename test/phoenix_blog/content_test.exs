@@ -5,7 +5,7 @@ defmodule PhoenixBlog.ContentTest do
 
   test "keystone: the macro compiles markdown into posts inside a host module" do
     posts = FixtureBlog.all_posts()
-    assert length(posts) == 3
+    assert length(posts) == 5
     # all_posts is newest-first and includes the draft + future-dated fixtures
     assert hd(posts).date == ~D[2030-01-01]
   end
@@ -33,12 +33,15 @@ defmodule PhoenixBlog.ContentTest do
   end
 
   test "all_tags/0 is unique + sorted across published posts only" do
-    # only hello-world is published; its tags are intro + news
+    # hello-world (intro, news) + second-post (news) are published; internal-post
+    # has no tags. Union, sorted = [intro, news].
     assert FixtureBlog.all_tags() == ["intro", "news"]
   end
 
   test "by_tag/1 filters published posts" do
-    assert Enum.map(FixtureBlog.by_tag("news"), & &1.id) == ["hello-world"]
+    # both published posts carry "news"; newest first
+    assert Enum.map(FixtureBlog.by_tag("news"), & &1.id) == ["hello-world", "second-post"]
+    assert Enum.map(FixtureBlog.by_tag("intro"), & &1.id) == ["hello-world"]
     assert FixtureBlog.by_tag("nonexistent") == []
   end
 

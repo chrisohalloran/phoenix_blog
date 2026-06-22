@@ -27,11 +27,13 @@ defmodule PhoenixBlog.Router do
     * `:title`, `:description` - index page SEO
   """
 
-  @doc "Mount the blog index and post routes at `path` (default `/blog`)."
+  @doc "Mount the blog index, tag, and post routes at `path` (default `/blog`)."
   defmacro blog_routes(path \\ "/blog", opts \\ []) do
     quote bind_quoted: [path: path, opts: opts] do
       private = %{phoenix_blog: Keyword.put(opts, :base_path, path)}
       get(path, PhoenixBlog.Controller, :index, private: private)
+      # Two segments, so this never collides with the one-segment "/:slug" below.
+      get(path <> "/tag/:tag", PhoenixBlog.Controller, :tag, private: private)
       get(path <> "/:slug", PhoenixBlog.Controller, :show, private: private)
     end
   end

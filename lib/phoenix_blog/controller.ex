@@ -23,10 +23,11 @@ defmodule PhoenixBlog.Controller do
 
     seo =
       SEO.index_meta(
-        canonical_base: canonical_base(conn),
-        base_path: base_path,
-        title: title,
-        description: config(conn, :description, "")
+        [
+          canonical_base: canonical_base(conn),
+          base_path: base_path,
+          description: config(conn, :description, "")
+        ] ++ publisher_opts(conn)
       )
 
     conn
@@ -35,7 +36,42 @@ defmodule PhoenixBlog.Controller do
     |> assign(:posts, content.published())
     |> assign(:tags, content.all_tags())
     |> assign(:base_path, base_path)
+    |> assign(:heading, config(conn, :heading) || title)
+    |> assign(:intro, config(conn, :intro))
+    |> assign(:cta, config(conn, :cta))
     |> assign_seo(seo, title)
+    |> render(:index)
+  end
+
+  def tag(conn, %{"tag" => tag}) do
+    content = fetch_config!(conn, :content)
+
+    # Only serve tags that actually exist. This closes the reflected-input
+    # vector (an arbitrary visitor string never reaches the page or its
+    # JSON-LD) and avoids thin "doorway" pages for tags with no posts.
+    unless tag in content.all_tags() do
+      raise PhoenixBlog.NotFound, "no published posts tagged #{inspect(tag)}"
+    end
+
+    base_path = config(conn, :base_path, "/blog")
+    heading = "Posts tagged: #{tag}"
+
+    seo =
+      SEO.tag_meta(
+        tag,
+        [canonical_base: canonical_base(conn), base_path: base_path] ++ publisher_opts(conn)
+      )
+
+    conn
+    |> apply_root_layout()
+    |> put_view(html: PhoenixBlog.HTML)
+    |> assign(:posts, content.by_tag(tag))
+    |> assign(:tags, content.all_tags())
+    |> assign(:base_path, base_path)
+    |> assign(:heading, heading)
+    |> assign(:intro, nil)
+    |> assign(:cta, config(conn, :cta))
+    |> assign_seo(seo, heading)
     |> render(:index)
   end
 
@@ -46,9 +82,9 @@ defmodule PhoenixBlog.Controller do
     post = content.get_by_slug!(slug)
 
     seo =
-      SEO.post_meta(post,
-        canonical_base: canonical_base(conn),
-        base_path: base_path
+      SEO.post_meta(
+        post,
+        [canonical_base: canonical_base(conn), base_path: base_path] ++ publisher_opts(conn)
       )
 
     conn
@@ -56,8 +92,35 @@ defmodule PhoenixBlog.Controller do
     |> put_view(html: PhoenixBlog.HTML)
     |> assign(:post, post)
     |> assign(:base_path, base_path)
+    |> assign(:cta, config(conn, :cta))
+    |> assign(:related, related_posts(content, post))
     |> assign_seo(seo, post.title)
     |> render(:show)
+  end
+
+  # Mount-level SEO config shared by every action's SEO call.
+  defp publisher_opts(conn) do
+    [
+      title: config(conn, :title, "Blog"),
+      publisher: config(conn, :publisher),
+      publisher_logo: config(conn, :publisher_logo)
+    ]
+  end
+
+  # Up to 3 related posts: those sharing a tag first, then recency fills the gap.
+  # Never includes the current post.
+  defp related_posts(content, post) do
+    by_tag =
+      post.tags
+      |> Enum.flat_map(&content.by_tag/1)
+      |> Enum.reject(&(&1.id == post.id))
+      |> Enum.uniq_by(& &1.id)
+
+    fallback = Enum.reject(content.recent(6), &(&1.id == post.id))
+
+    (by_tag ++ fallback)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.take(3)
   end
 
   # Assign SEO under every convention the site family uses, so the blog renders
