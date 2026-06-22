@@ -93,11 +93,54 @@ Options go on `blog_routes` (per mount) or under `config :phoenix_blog`:
 |---|---|
 | `:content` (required) | your content module |
 | `:web_module` | host web module; its `Layouts.root` wraps blog pages |
-| `:canonical_base` | site origin for canonical / OG URLs |
+| `:canonical_base` | site origin for canonical / OG URLs (defaults to the endpoint URL) |
 | `:title`, `:description` | blog index SEO |
+| `:heading`, `:intro` | on-page index H1 and one-line positioning intro |
+| `:cta` | end-of-post call to action: `%{heading, sub, label, href}` |
+| `:publisher`, `:publisher_logo` | Organization name + logo for JSON-LD `publisher` |
 
 A host without the template-family `Layouts.root` falls back to a minimal
 built-in root (`PhoenixBlog.Layouts`).
+
+## Conversion surfaces
+
+The blog is an acquisition surface: its job is to turn a search visitor into your
+core action. The engine ships the slots; you supply the content.
+
+- **End-of-post CTA**: set `:cta` and every post ends with a call to action
+  routing the reader to your quote/contact/demo. Unset, no CTA renders (no
+  half-configured stub), and a `:cta` missing a usable `href`/`label` is treated
+  as unset. The CTA carries a stable `data-phoenix-blog-cta` attribute, so your
+  existing analytics (GA, Plausible, etc.) can track the post-to-action
+  click-through without the library bundling a tracker.
+- **Author credibility**: `author_role` and `author_url` frontmatter turn the
+  byline into a credibility block with an end-of-post author card.
+- **Related posts**: each post surfaces up to three related posts (same tag
+  first, recency fallback), a retention path and an internal-linking SEO lever.
+- **Index positioning**: `:heading`/`:intro` make the index a positioning
+  surface; an empty index offers the `:cta` instead of a dead end.
+- **Tag facets**: `/blog/tag/:tag` lists posts for an existing tag (linked from
+  every tag chip), giving long-tail cluster hubs for free. Unknown tags 404.
+
+## Post frontmatter
+
+| Key | Purpose |
+|---|---|
+| `title` (required) | post title |
+| `description` | listing + meta description |
+| `tags` | list of tags (or a single string) |
+| `author`, `author_role`, `author_url` | byline + credibility block |
+| `cover_image` | OG / Twitter image |
+| `draft` | `true` hides the post everywhere |
+| `noindex` | `true` keeps the post reachable but out of search + the sitemap |
+| `updated` | a Date or ISO-8601 string; sets JSON-LD `dateModified` |
+
+## Structured data
+
+Posts emit JSON-LD `Article` (with `publisher`, `dateModified`,
+`mainEntityOfPage`) plus a `BreadcrumbList`. The index and tag facets emit a
+`CollectionPage`. Hosts using the fallback `PhoenixBlog.SEO.head/1` get the same
+JSON-LD rendered correctly inside `<script>` tags.
 
 ## Caveats
 
