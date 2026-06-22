@@ -19,12 +19,10 @@ defmodule PhoenixBlog.Test.Web.Layouts do
         <meta :if={assigns[:seo_meta][:robots]} name="robots" content={@seo_meta[:robots]} />
         <link :if={assigns[:seo_meta][:canonical]} rel="canonical" href={@seo_meta[:canonical]} />
         <meta :if={assigns[:seo_meta][:og_type]} property="og:type" content={@seo_meta[:og_type]} />
-        <script
-          :for={schema <- assigns[:seo_meta][:schema] || []}
-          type="application/ld+json"
-        >
-          {Phoenix.HTML.raw(Jason.encode!(schema))}
-        </script>
+        <%= for schema <- assigns[:seo_meta][:schema] || [] do %>
+          <%!-- escape: :html_safe so a value containing </script> cannot break out --%>
+          <script type="application/ld+json"><%= Phoenix.HTML.raw(Jason.encode!(schema, escape: :html_safe)) %></script>
+        <% end %>
       </head>
       <body>
         <header>TEST-CHROME</header>
@@ -71,9 +69,11 @@ defmodule PhoenixBlog.Test.Router do
     )
 
     # A second mount WITHOUT :canonical_base, to prove canonical derives from the endpoint.
+    # Also carries a :cta so the configured call-to-action path is integration-tested.
     blog_routes("/derived",
       content: PhoenixBlog.Test.FixtureBlog,
-      web_module: PhoenixBlog.Test.Web
+      web_module: PhoenixBlog.Test.Web,
+      cta: %{heading: "Work with us", sub: "We can help.", label: "Get in touch", href: "/contact"}
     )
 
     # Deliberately AFTER blog_routes, to prove the catch-all does not swallow /blog.

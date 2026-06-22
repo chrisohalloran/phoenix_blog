@@ -32,6 +32,24 @@ For each Phoenix site, repeat the five steps in `README.md`:
 - `sitemap.xml` includes the blog post URLs; drafts and future-dated posts do not appear.
 - The site's existing routes (incl. the catch-all) still resolve.
 
+### Upgrading an installed site to v0.2.0 (conversion architecture)
+
+The conversion surfaces ship inert: a site renders unchanged until it sets the
+new config. To turn them on, per site:
+
+1. Bump the dep: `mix deps.update phoenix_blog` (the github SHA in `mix.lock`
+   moves only when you do this, so there is no surprise rollout).
+2. Set the host content in `blog_routes` opts (or `config :phoenix_blog`):
+   - `cta: %{heading: ..., sub: ..., label: ..., href: "/<your core action>"}`
+   - `publisher: "<Business name>"`, `publisher_logo: "/images/logo.png"`
+   - optionally `heading:` / `intro:` for the index.
+3. Add `author_role` / `author_url` to post frontmatter where credibility helps.
+4. Expect two visual changes (see `CHANGELOG.md`): the post body reading measure
+   and the "All articles" / "Topics" copy.
+
+Writing the actual per-host CTA and author copy is a small content edit per
+site; the library + template land the structure.
+
 ### leva_web note
 
 `leva_web` is an umbrella app, not a template fork, so confirm it exposes

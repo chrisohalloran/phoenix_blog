@@ -8,7 +8,9 @@ defmodule PhoenixBlog.SitemapTest do
     entries =
       Sitemap.entries(content: FixtureBlog, canonical_base: "https://x.test", base_path: "/blog")
 
-    assert entries == [%{loc: "https://x.test/blog/hello-world", lastmod: "2026-01-02"}]
+    assert %{loc: "https://x.test/blog/hello-world", lastmod: "2026-01-02"} in entries
+    assert %{loc: "https://x.test/blog/second-post", lastmod: "2026-01-01"} in entries
+    assert length(entries) == 2
   end
 
   test "entries/1 excludes drafts and future-dated posts" do
@@ -21,15 +23,24 @@ defmodule PhoenixBlog.SitemapTest do
     refute Enum.any?(locs, &String.contains?(&1, "future-post"))
   end
 
-  test "entries/1 honours a custom base_path" do
-    [entry] =
-      Sitemap.entries(
-        content: FixtureBlog,
-        canonical_base: "https://x.test",
-        base_path: "/insights"
-      )
+  test "entries/1 excludes noindex posts but they stay published" do
+    locs =
+      [content: FixtureBlog, canonical_base: "https://x.test"]
+      |> Sitemap.entries()
+      |> Enum.map(& &1.loc)
 
-    assert entry.loc == "https://x.test/insights/hello-world"
+    # internal-post is published (reachable) but noindex, so absent from the sitemap
+    assert "internal-post" in Enum.map(FixtureBlog.published(), & &1.id)
+    refute Enum.any?(locs, &String.contains?(&1, "internal-post"))
+  end
+
+  test "entries/1 honours a custom base_path" do
+    locs =
+      [content: FixtureBlog, canonical_base: "https://x.test", base_path: "/insights"]
+      |> Sitemap.entries()
+      |> Enum.map(& &1.loc)
+
+    assert "https://x.test/insights/hello-world" in locs
   end
 
   test "urlset_xml/1 is well-formed" do

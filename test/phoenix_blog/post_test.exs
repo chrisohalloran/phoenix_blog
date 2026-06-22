@@ -50,6 +50,46 @@ defmodule PhoenixBlog.PostTest do
       assert Post.build("2026-01-02-x.md", %{title: "X"}, "").tags == []
     end
 
+    test "reads optional author_role and author_url" do
+      post =
+        Post.build(
+          "2026-01-02-x.md",
+          %{title: "X", author: "Chris", author_role: "Founder", author_url: "https://x.test/about"},
+          ""
+        )
+
+      assert post.author_role == "Founder"
+      assert post.author_url == "https://x.test/about"
+    end
+
+    test "author_role, author_url and updated default to nil" do
+      post = Post.build("2026-01-02-x.md", %{title: "X"}, "")
+      assert post.author_role == nil
+      assert post.author_url == nil
+      assert post.updated == nil
+    end
+
+    test "noindex defaults to false and only true reads true" do
+      assert Post.build("2026-01-02-x.md", %{title: "X"}, "").noindex == false
+      assert Post.build("2026-01-02-x.md", %{title: "X", noindex: true}, "").noindex == true
+      # any non-true value is false (strict coercion, like draft?)
+      assert Post.build("2026-01-02-x.md", %{title: "X", noindex: "yes"}, "").noindex == false
+    end
+
+    test "updated accepts a Date or an ISO-8601 string" do
+      from_date = Post.build("2026-01-02-x.md", %{title: "X", updated: ~D[2026-06-20]}, "")
+      from_string = Post.build("2026-01-02-x.md", %{title: "X", updated: "2026-06-20"}, "")
+
+      assert from_date.updated == ~D[2026-06-20]
+      assert from_string.updated == ~D[2026-06-20]
+    end
+
+    test "updated raises a clear error when the string is not a date" do
+      assert_raise ArgumentError, fn ->
+        Post.build("2026-01-02-x.md", %{title: "X", updated: "not-a-date"}, "")
+      end
+    end
+
     test "raises a clear error when title is missing" do
       assert_raise KeyError, fn ->
         Post.build("2026-01-02-x.md", %{description: "no title"}, "")

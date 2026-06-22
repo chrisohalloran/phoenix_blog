@@ -10,7 +10,8 @@ defmodule PhoenixBlog.Sitemap do
       PhoenixBlog.Sitemap.entries(content: MySite.Blog, canonical_base: "https://mysite.com")
       #=> [%{loc: "https://mysite.com/blog/hello", lastmod: "2026-01-02"}, ...]
 
-  Only published posts are included (drafts and future-dated are excluded).
+  Only published posts are included (drafts, future-dated, and `noindex` posts
+  are excluded).
   """
 
   @doc """
@@ -24,7 +25,9 @@ defmodule PhoenixBlog.Sitemap do
     base = Keyword.get(opts, :canonical_base, "")
     base_path = Keyword.get(opts, :base_path, "/blog")
 
-    Enum.map(content.published(), fn post ->
+    content.published()
+    |> Enum.reject(& &1.noindex)
+    |> Enum.map(fn post ->
       %{loc: "#{base}#{base_path}/#{post.id}", lastmod: Date.to_iso8601(post.date)}
     end)
   end
